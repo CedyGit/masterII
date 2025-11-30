@@ -35,7 +35,7 @@ RUN mkdir -p storage/framework/{sessions,views,cache} \
 RUN chown -R www-data:www-data /var/www/html \
     && chmod -R 775 storage bootstrap/cache
 
-# Cache Laravel (ne pas générer de clé ici)
+# Cache Laravel
 RUN php artisan config:cache || true
 RUN php artisan route:cache || true
 
@@ -55,7 +55,7 @@ RUN echo 'server { \
     } \
 }' > /etc/nginx/http.d/default.conf
 
-# Supervisord pour gérer PHP-FPM et Nginx
+# Supervisord
 RUN echo '[supervisord] \n\
 nodaemon=true \n\
 [program:php-fpm] \n\
@@ -67,9 +67,8 @@ command=nginx -g "daemon off;" \n\
 autostart=true \n\
 autorestart=true' > /etc/supervisord.conf
 
-# Exposer le port 8000
+# Exposer le port
 EXPOSE 8000
 
-# Démarrer avec supervisord
+# Démarrer
 CMD ["/usr/bin/supervisord", "-c", "/etc/supervisord.conf"]
-```
