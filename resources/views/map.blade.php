@@ -20,12 +20,19 @@
             background: #f5f5f5;
         }
 
-        #header {
+            #header {
+            position: relative;         /* nécessaire pour positionner le bouton absolu */
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
             padding: 20px;
             box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            display: flex;
+            align-items: center;
+            justify-content: center;   /* centre horizontalement le header-content */
+            text-align: center;
+            min-height: 72px;
         }
+
 
         #header h1 {
             font-size: 24px;
@@ -40,6 +47,7 @@
         #container {
             display: flex;
             height: calc(100vh - 100px);
+             transition: margin-left 0.3s ease;
         }
 
         #sidebar {
@@ -211,12 +219,108 @@
             border: 1px solid rgba(0,0,0,0.1);
         }
 
+
+        #toggle-sidebar {
+            position: absolute;
+            top: 15px;
+            left: 15px;
+            background: rgba(0,0,0,0.2);
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            font-size: 18px;
+            cursor: pointer;
+            border-radius: 5px;
+            transition: background 0.2s;
+        }
+
+        #toggle-sidebar:hover {
+            background: rgba(0,0,0,0.4);
+        }
+
+
+        .header-content {
+            display: inline-block;
+        }
+
+        #header h1 {
+            font-size: 20px;
+            margin-bottom: 4px;
+        }
+        #header p {
+            margin: 0;
+            opacity: 0.95;
+            font-size: 13px;
+        }
+
+        #toggle-sidebar {
+            position: absolute;
+            left: 16px;             
+            top: 50%;
+            transform: translateY(-50%);
+            background: rgba(255,255,255,0.12);
+            color: white;
+            border: none;
+            width: 36px;
+            height: 36px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 8px;
+            cursor: pointer;
+            z-index: 2200;
+            font-size: 18px;
+            transition: background 0.15s, transform 0.15s;
+        }
+        #toggle-sidebar:hover {
+            background: rgba(255,255,255,0.22);
+            transform: translateY(-50%) scale(1.03);
+        }
+
+
+        #sidebar {
+        width: 320px;
+        transition: width 0.28s ease, padding 0.28s ease;
+        }
+
+        #sidebar.collapsed {
+        width: 0 !important;
+        padding: 0 !important;
+        overflow: hidden;
+        }
+
+
+        #container {
+        display: flex;
+        height: calc(100vh - 100px);
+        transition: all 0.28s ease;
+        }
+
+        #container.fullscreen #map,
+        body.sidebar-collapsed #map {
+        width: 100%;
+        flex: 1 1 auto;
+        transition: width 0.28s ease;
+        }
+
+        #map {
+        min-width: 0;
+        }
+
+        #toggle-sidebar[aria-expanded="false"] {
+        transform: translateY(-50%) rotate(180deg);
+        }
     </style>
 </head>
 <body>
+    
     <div id="header">
-        <h1>🗺️ API Infrastructures Publiques de Madagascar</h1>
-        <p>Visualisation interactive basée sur OpenStreetMap</p>
+        <button id="toggle-sidebar" aria-expanded="true" title="Cacher / afficher le menu">☰</button>
+
+        <div class="header-content">
+            <h1>🗺️ API Infrastructures Publiques de Madagascar</h1>
+            <p>Visualisation interactive basée sur OpenStreetMap</p>
+        </div>
     </div>
 
     <div id="container">
@@ -521,8 +625,6 @@
             });
         }
 
-
-
         // Initialisation au chargement de la page
         window.onload = () => {
             loadStats();
@@ -534,5 +636,45 @@
             });
         };
     </script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const toggleButton = document.getElementById('toggle-sidebar');
+            const sidebar = document.getElementById('sidebar');
+            const container = document.getElementById('container');
+
+            if (!toggleButton || !sidebar || !container) {
+            console.error('Toggle: éléments manquants', { toggleButton, sidebar, container });
+            return;
+            }
+
+            // état initial (au cas où)
+            const initiallyCollapsed = sidebar.classList.contains('collapsed');
+            toggleButton.setAttribute('aria-expanded', (!initiallyCollapsed).toString());
+            if (initiallyCollapsed) document.body.classList.add('sidebar-collapsed');
+
+            toggleButton.addEventListener('click', () => {
+            const nowCollapsed = sidebar.classList.toggle('collapsed');
+
+            // on marque le container pour CSS si besoin
+            container.classList.toggle('fullscreen', nowCollapsed);
+            document.body.classList.toggle('sidebar-collapsed', nowCollapsed);
+
+            // accessibilité
+            toggleButton.setAttribute('aria-expanded', (!nowCollapsed).toString());
+
+            // redraw Leaflet map après transition (timeout légèrement supérieur à la transition CSS)
+            setTimeout(() => {
+                try {
+                if (typeof map !== 'undefined' && map && typeof map.invalidateSize === 'function') {
+                    map.invalidateSize();
+                }
+                } catch (e) {
+                console.warn('map.invalidateSize() failed:', e);
+                }
+            }, 320);
+            });
+        });
+    </script>
+
 </body>
 </html>
