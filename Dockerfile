@@ -12,6 +12,7 @@ RUN apk update && apk add --no-cache \
     supervisor \
     curl \
     oniguruma-dev \
+    bash \
     && docker-php-ext-install pdo pdo_pgsql mbstring
 
 # Répertoire de travail
@@ -26,6 +27,10 @@ COPY . .
 # Installer les dépendances
 RUN composer install --no-dev --optimize-autoloader --no-interaction
 
+# Copier le script de démarrage
+COPY start.sh /usr/local/bin/start.sh
+RUN chmod +x /usr/local/bin/start.sh
+
 # Créer les dossiers nécessaires
 RUN mkdir -p storage/framework/{sessions,views,cache} \
     && mkdir -p storage/logs \
@@ -34,10 +39,6 @@ RUN mkdir -p storage/framework/{sessions,views,cache} \
 # Permissions
 RUN chown -R www-data:www-data /var/www/html \
     && chmod -R 775 storage bootstrap/cache
-
-# Cache Laravel
-RUN php artisan config:cache || true
-RUN php artisan route:cache || true
 
 # Configuration Nginx
 RUN echo 'server { \
@@ -55,7 +56,7 @@ RUN echo 'server { \
     } \
 }' > /etc/nginx/http.d/default.conf
 
-# Configuration Supervisord (correctement formatée)
+# Configuration Supervisord
 RUN printf "[supervisord]\n\
 nodaemon=true\n\
 logfile=/dev/stdout\n\
@@ -82,5 +83,5 @@ stderr_logfile_maxbytes=0\n" > /etc/supervisord.conf
 # Exposer le port
 EXPOSE 8000
 
-# Démarrer
-CMD ["/usr/bin/supervisord", "-c", "/etc/supervisord.conf"]
+# Utiliser le script de démarrage
+CMD ["/usr/local/bin/start.sh"]
