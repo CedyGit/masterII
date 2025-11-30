@@ -55,17 +55,29 @@ RUN echo 'server { \
     } \
 }' > /etc/nginx/http.d/default.conf
 
-# Supervisord
-RUN echo '[supervisord] \n\
-nodaemon=true \n\
-[program:php-fpm] \n\
-command=php-fpm \n\
-autostart=true \n\
-autorestart=true \n\
-[program:nginx] \n\
-command=nginx -g "daemon off;" \n\
-autostart=true \n\
-autorestart=true' > /etc/supervisord.conf
+# Configuration Supervisord (correctement formatée)
+RUN printf "[supervisord]\n\
+nodaemon=true\n\
+logfile=/dev/stdout\n\
+logfile_maxbytes=0\n\
+\n\
+[program:php-fpm]\n\
+command=php-fpm\n\
+autostart=true\n\
+autorestart=true\n\
+stdout_logfile=/dev/stdout\n\
+stdout_logfile_maxbytes=0\n\
+stderr_logfile=/dev/stderr\n\
+stderr_logfile_maxbytes=0\n\
+\n\
+[program:nginx]\n\
+command=nginx -g 'daemon off;'\n\
+autostart=true\n\
+autorestart=true\n\
+stdout_logfile=/dev/stdout\n\
+stdout_logfile_maxbytes=0\n\
+stderr_logfile=/dev/stderr\n\
+stderr_logfile_maxbytes=0\n" > /etc/supervisord.conf
 
 # Exposer le port
 EXPOSE 8000
