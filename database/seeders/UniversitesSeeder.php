@@ -1,0 +1,92 @@
+<?php
+
+namespace Database\Seeders;
+
+use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\File;
+
+class UniversitesSeeder extends Seeder
+{
+    public function run()
+    {
+        $universityTypeId = DB::table('types_infrastructures')->where('name', 'university')->value('id');
+
+        if (!$universityTypeId) {
+            $this->command->error("❌ Le type 'university' n'existe pas.");
+            return;
+        }
+
+        $path = storage_path('app/universites_madagascar.geojson');
+        
+        if (!File::exists($path)) {
+            $this->command->error("❌ Fichier GeoJSON introuvable : $path");
+            return;
+        }
+
+        $this->command->info("✅ Fichier GeoJSON trouvé");
+
+        $json = File::get($path);
+        $data = json_decode($json, true);
+
+        if (!$data || !isset($data['features'])) {
+            $this->command->error("❌ Le fichier GeoJSON est invalide");
+            return;
+        }
+
+        $totalFeatures = count($data['features']);
+        $this->command->info("📊 Nombre d'universités à importer : $totalFeatures");
+
+        $imported = 0;
+        $errors = 0;
+        $bar = $this->command->getOutput()->createProgressBar($totalFeatures);
+        $bar->start();
+
+        foreach ($data['features'] as $feature) {
+            try {
+                $props = $feature['properties'];
+                $geometry = $feature['geometry'];
+
+                if (!$geometry || !isset($geometry['coordinates'])) {
+                    $errors++;
+                    $bar->advance();
+                    continue;
+                }
+
+                $geojsonString = json_encode($geometry);
+
+                DB::table('infrastructures')->updateOrInsert(
+                    ['osm_id' => $props['@id'] ?? null],
+                    [
+                        'type_infrastructure_id' => $universityTypeId,
+                        'name' => $props['name'] ?? 'Université sans nom',
+                        'level' => null,
+                        'operator' => $props['operator'] ?? $props['operator:type'] ?? null,
+                        'city' => $props['addr:city'] ?? null,
+                        'geom' => DB::raw("ST_SetSRID(ST_GeomFromGeoJSON('$geojsonString'), 4326)"),
+                        'created_at' => now(),
+                        'updated_at' => now(),
+                    ]
+                );
+
+                $imported++;
+            } catch (\Exception $e) {
+                $errors++;
+            }
+
+            $bar->advance();
+        }
+
+        $bar->finish();
+        $this->command->newLine(2);
+        $this->command->info("✅ Importation terminée !");
+        $this->command->table(
+            ['Statistique', 'Valeur'],
+            [
+                ['Total', $totalFeatures],
+                ['Importées', $imported],
+                ['Erreurs', $errors],
+            ]
+        );
+    }
+}

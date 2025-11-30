@@ -20,3 +20,26 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
 });
 
 Route::get('/infrastructures', [InfrastructureController::class, 'index']);
+
+Route::prefix('v1')->group(function () {
+    // Liste tous les types d'infrastructures
+    Route::get('/types', [InfrastructureController::class, 'getTypes']);
+    
+    // Liste toutes les infrastructures (avec pagination)
+    Route::get('/infrastructures', [InfrastructureController::class, 'index']);
+    
+    // Infrastructures par type
+    Route::get('/infrastructures/type/{type}', [InfrastructureController::class, 'byType']);
+    
+    // Recherche par ville
+    Route::get('/infrastructures/city/{city}', [InfrastructureController::class, 'byCity']);
+    
+    // Recherche dans un rayon (latitude, longitude, rayon en km)
+    Route::get('/infrastructures/nearby', [InfrastructureController::class, 'nearby']);
+    
+    // Détails d'une infrastructure
+    Route::get('/infrastructures/{id}', [InfrastructureController::class, 'show']);
+    
+    // Statistiques
+    Route::get('/stats', [InfrastructureController::class, 'stats']);
+});
