@@ -9,6 +9,8 @@ class CreateInfrastructuresTable extends Migration
 {
     public function up()
     {
+         DB::statement('CREATE EXTENSION IF NOT EXISTS postgis;');
+
         Schema::create('infrastructures', function (Blueprint $table) {
             $table->id();
             

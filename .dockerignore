@@ -1,0 +1,9 @@
+.git
+.gitignore
+.env
+vendor/
+node_modules/
+storage/*.sqlite
+*.DS_Store
+tests/
+.phpunit.result.cache
