@@ -19,6 +19,13 @@ chmod -R 775 storage bootstrap/cache
 # Lancer les migrations
 php artisan migrate --force
 
+if [ "$SEED" = "true" ]; then
+    echo "📊 Seeding database..."
+    php artisan db:seed --force
+fi
+
+exec /usr/bin/supervisord -c /etc/supervisord.conf
+
 echo "✅ Deployment complete!"
 
 # Démarrer supervisord
