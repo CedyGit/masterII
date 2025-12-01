@@ -64,9 +64,7 @@ class InfrastructureController extends Controller
         ]);
     }
 
-    /**
-     * NOUVELLES MÉTHODES - Ajoutées en dessous
-     */
+    
     
     /**
      * Liste tous les types d'infrastructures
